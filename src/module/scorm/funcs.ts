@@ -7,10 +7,7 @@ import {
 	IScormResource,
 } from "./model";
 
-const zip = jszip();
-export const analizarScorm = async (buffer: Buffer) => {
-	const loaded = await zip.loadAsync(buffer);
-
+export const analizarScorm = async (loaded: jszip) => {
 	const manifestXML = await loaded.file("imsmanifest.xml")?.async("string");
 
 	if (!manifestXML) {

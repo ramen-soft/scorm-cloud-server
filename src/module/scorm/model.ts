@@ -1,5 +1,5 @@
 export interface IScorm {
-	id: number;
+	id?: number;
 	name: string;
 }
 
