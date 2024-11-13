@@ -7,6 +7,7 @@
 		"build": "tsc",
 		"dev": "nodemon --watch src src/index.ts",
 		"start": "tsc && node build/index.js",
+		"mock": "nodemon --watch src src/test.ts",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"keywords": [],
@@ -19,6 +20,8 @@
 		"express": "^4.21.1",
 		"jszip": "^3.10.1",
 		"multer": "1.4.5-lts.1",
+		"mysql2": "^3.11.4",
+		"uuid": "^11.0.3",
 		"xml2js": "^0.6.2"
 	},
 	"devDependencies": {
@@ -26,6 +29,7 @@
 		"@types/cors": "^2.8.17",
 		"@types/express": "^5.0.0",
 		"@types/multer": "^1.4.12",
+		"@types/uuid": "^10.0.0",
 		"@types/xml2js": "^0.4.14",
 		"nodemon": "^3.1.7",
 		"ts-node": "^10.9.2",
