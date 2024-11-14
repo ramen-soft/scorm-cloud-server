@@ -7,6 +7,11 @@ import jszip from "jszip";
 import fs from "fs";
 import path from "path";
 import { v4 as uuid } from "uuid";
+import {
+	PaginatedRequest,
+	ResultsPagination,
+} from "../../util/pagination.model";
+import { getScorms } from "./service";
 
 const zip = jszip();
 
@@ -14,15 +19,24 @@ const router = Router();
 
 const scormUploader = multer({ storage: memoryStorage() });
 
-const listAllScorms = (req: Request, res: Response) => {
-	const scorms: IScorm[] = [];
+const listAllScorms = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	const pagination: PaginatedRequest = {
+		page: +(req.query.page || 0),
+		limit: +(req.query.limit || 15),
+	};
+	const scorms = await getScorms(pagination);
 	res.status(200).send(scorms);
 };
 router.get("/", listAllScorms);
 
-const getScormInfo = (req: Request, res: Response) => {
-	const scorm: IScorm = { id: Number(req.params["id"]), name: "bleh" };
-	res.status(200).send(scorm);
+const getScormInfo = async (req: Request, res: Response) => {
+	const repo = new ScormRepository();
+	const result = await repo.findOne(Number(req.params["id"]));
+	res.status(200).send(result);
 };
 router.get("/:id", getScormInfo);
 
