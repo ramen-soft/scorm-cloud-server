@@ -1,0 +1,146 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>SCORM WRAPPER</title>
+<script type="text/javascript" src="easyXDM.min.js">
+</script>
+<script type="text/javascript">
+    easyXDM.DomHelper.requiresJSON("json2.js");
+</script>
+</head>
+<body style="margin:0px;">
+</body>
+<script>
+    var rpc = new easyXDM.Rpc({},
+    {
+        local: {
+            scormGetValue: function(context, successFn, errorFn)
+			{
+				var value = parent.parent.API.LMSGetValue(context);
+				
+				var errorCode = parent.parent.API.LMSGetLastError();
+				
+				if (errorCode != 0) {
+					return parent.parent.API.LMSGetErrorString(errorCode);
+				}
+				else
+				{				
+					return value;
+				}
+            },
+			scormGetAllValues: function(successFn, errorFn)
+			{
+				var result = {};
+				
+				result["cmi.core._children"] 				= parent.parent.API.LMSGetValue("cmi.core._children");
+				result["cmi.core.credit"] 					= parent.parent.API.LMSGetValue("cmi.core.credit");
+				result["cmi.core.entry"] 					= parent.parent.API.LMSGetValue("cmi.core.entry");
+				result["cmi.core.launch_data"] 				= parent.parent.API.LMSGetValue("cmi.core.launch_data");
+				result["cmi.core.lesson_mode"] 				= parent.parent.API.LMSGetValue("cmi.core.lesson_mode");
+				result["cmi.core.comments_from_lms"] 		= parent.parent.API.LMSGetValue("cmi.core.comments_from_lms");
+				result["cmi.core.lesson_status"] 			= parent.parent.API.LMSGetValue("cmi.core.lesson_status");
+				result["cmi.core.lesson_location"] 			= parent.parent.API.LMSGetValue("cmi.core.lesson_location");
+				result["cmi.core.score._children"] 			= parent.parent.API.LMSGetValue("cmi.core.score._children");
+				result["cmi.core.score.raw"] 				= parent.parent.API.LMSGetValue("cmi.core.score.raw");
+				result["cmi.core.score.min"] 				= parent.parent.API.LMSGetValue("cmi.core.score.min");
+				result["cmi.core.score.max"] 				= parent.parent.API.LMSGetValue("cmi.core.score.max");
+				result["cmi.core.total_time"] 				= parent.parent.API.LMSGetValue("cmi.core.total_time");
+				result["cmi.comments"] 						= parent.parent.API.LMSGetValue("cmi.comments");
+				result["cmi.suspend_data"] 					= parent.parent.API.LMSGetValue("cmi.suspend_data");
+
+				result["cmi.student_data._children"]		= parent.parent.API.LMSGetValue("cmi.student_data._children");
+				result["cmi.student_data.mastery_score"]	= parent.parent.API.LMSGetValue("cmi.student_data.mastery_score");
+				result["cmi.student_data.max_time_allowed"]	= parent.parent.API.LMSGetValue("cmi.student_data.max_time_allowed");
+				result["cmi.student_data.time_limit_action"]= parent.parent.API.LMSGetValue("cmi.student_data.time_limit_action");
+
+				result["cmi.student_preference._children"]	= parent.parent.API.LMSGetValue("cmi.student_preference._children");
+				result["cmi.student_preference.audio"]		= parent.parent.API.LMSGetValue("cmi.student_preference.audio");
+				result["cmi.student_preference.language"]	= parent.parent.API.LMSGetValue("cmi.student_preference.language");
+				result["cmi.student_preference.speed"]		= parent.parent.API.LMSGetValue("cmi.student_preference.speed");
+				result["cmi.student_preference.text"]		= parent.parent.API.LMSGetValue("cmi.student_preference.text");
+				
+				result["cmi.objectives._children"] 			= parent.parent.API.LMSGetValue("cmi.objectives._children");
+				result["cmi.objectives._count"] 			= parent.parent.API.LMSGetValue("cmi.objectives._count");
+
+				for (i=0; i<result["cmi.objectives._count"]; i++)
+				{
+					result["cmi.objectives." + i + ".id"] 				= parent.parent.API.LMSGetValue("cmi.objectives." + i + ".id");
+					result["cmi.objectives." + i + ".status"] 			= parent.parent.API.LMSGetValue("cmi.objectives." + i + ".status");
+					result["cmi.objectives." + i + ".score._children"] 	= parent.parent.API.LMSGetValue("cmi.objectives." + i + ".score._children");
+					result["cmi.objectives." + i + ".score.raw"] 		= parent.parent.API.LMSGetValue("cmi.objectives." + i + ".score.raw");
+					result["cmi.objectives." + i + ".score.min"] 		= parent.parent.API.LMSGetValue("cmi.objectives." + i + ".score.min");
+					result["cmi.objectives." + i + ".score.max"] 		= parent.parent.API.LMSGetValue("cmi.objectives." + i + ".score.max");
+				}
+
+				result["cmi.interactions._children"] 	= parent.parent.API.LMSGetValue("cmi.interactions._children");
+				result["cmi.interactions._count"] 		= parent.parent.API.LMSGetValue("cmi.interactions._count");
+
+				for (i=0; i<result["cmi.interactions._count"]; i++)
+				{
+					result["cmi.interactions." + i + ".id"] 				= parent.parent.API.LMSGetValue("cmi.interactions." + i + ".id");
+					result["cmi.interactions." + i + ".time"] 				= parent.parent.API.LMSGetValue("cmi.interactions." + i + ".time");
+					result["cmi.interactions." + i + ".type"] 				= parent.parent.API.LMSGetValue("cmi.interactions." + i + ".type");
+					result["cmi.interactions." + i + ".weighting"] 			= parent.parent.API.LMSGetValue("cmi.interactions." + i + ".weighting");
+					result["cmi.interactions." + i + ".student_response"] 	= parent.parent.API.LMSGetValue("cmi.interactions." + i + ".student_response");
+					result["cmi.interactions." + i + ".result"] 			= parent.parent.API.LMSGetValue("cmi.interactions." + i + ".result");
+					result["cmi.interactions." + i + ".latency"] 			= parent.parent.API.LMSGetValue("cmi.interactions." + i + ".latency");
+
+					result["cmi.interactions." + i + ".objectives._count"]	= parent.parent.API.LMSGetValue("cmi.interactions." + i + ".objectives._count");
+
+					for (j=0; j<result["cmi.interactions." + i + ".objectives._count"]; j++)
+					{
+						result["cmi.interactions." + i + ".objectives." + j + ".id"] = parent.parent.API.LMSGetValue("cmi.interactions." + i + ".objectives." + j + ".id");
+					}
+
+					result["cmi.interactions." + i + ".correct_responses._count"] = parent.parent.API.LMSGetValue("cmi.interactions." + i + ".correct_responses._count");
+
+					for (j=0; j<result["cmi.interactions." + i + ".correct_responses._count"]; j++)
+					{
+						result["cmi.interactions." + i + ".correct_responses." + j + ".pattern"] = parent.parent.API.LMSGetValue("cmi.interactions." + i + ".correct_responses." + j + ".pattern");
+					}
+				}
+				
+				return result;
+				
+			},
+            scormSetValue: function(context, value, successFn, errorFn)
+			{
+				parent.parent.API.LMSSetValue(context, value);
+				
+				var errorCode = parent.parent.API.LMSGetLastError();
+				
+				//alert("scormSetValue " + context + ", " + value + " = " + errorCode);
+				
+				if (errorCode != 0) {
+					return parent.parent.API.LMSGetErrorString(errorCode);
+				}
+				else
+				{				
+					return "true";
+				}
+            },
+            scormCommit: function(successFn, errorFn)
+			{
+				parent.parent.API.LMSCommit("");
+				
+				return "true";
+            },
+			scormFinish: function(successFn, errorFn)
+			{
+				parent.parent.API.LMSFinish("");
+				
+				var errorCode = parent.parent.API.LMSGetLastError();
+				
+				if (errorCode != 0) {
+					return parent.parent.API.LMSGetErrorString(errorCode);
+				}
+				else
+				{				
+					return "true";
+				}
+            }
+        }
+    });
+</script>
+</html>

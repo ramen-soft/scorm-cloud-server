@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title></title>
+</head>
+<script language="javascript" src="jquery-1.6.1.min.js"></script>
+<script language="javascript">
+	function gup( name ){ _url = window.location.href; _url = _url.replace(/%3F/g, "?"); _url = _url.replace(/%3D/g, "="); _url = _url.replace(/%26/g, "&"); name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");  var regexS = "[\\?&]"+name+"=([^&#]*)";  var regex = new RegExp( regexS );  var results = regex.exec( _url );  if( results == null )    return undefined;  else    return results[1];}
+</script>
+<body>
+<form id="student_info" method="POST" action="">
+    <input id="username" name="username" type="hidden" value="" /> 
+    <input id="fullname" name="fullname" type="hidden" value="" /> 
+</form>
+<script>
+
+	/////////////////////////////////////////////////////////////////////////////////////////
+	// Si desea forzar a que este conector pertenezca a un cliente en particular,
+	// debe incluir el ID de ese cliente a continuacion:
+	// Por ejemplo var client="RSENtr3FhrrNt6vFkr3v6fxbN";
+
+	var client = "#@CLIENT_GUID@#";
+
+	/////////////////////////////////////////////////////////////////////////////////////////
+
+	$(document).ready(function()
+	{
+		$('#username').attr("value", unescape(gup("id")));
+		$('#fullname').attr("value", unescape(gup("n")));
+
+		if (client == "")
+		{
+			if ("https:" == document.location.protocol) 
+			{
+				$('#student_info').attr("action", "https://scormcloud.orbeformacion.com/index.php?prod=" + unescape(gup("product")) + "&content=" + unescape(gup("content")) + "&lms=true&referer=" + window.location.href);
+			} 
+			else 
+			{
+				$('#student_info').attr("action", "http://scormcloud.orbeformacion.com/index.php?prod=" + unescape(gup("product")) + "&content=" + unescape(gup("content")) + "&lms=true&referer=" + window.location.href);
+			}
+		}
+		else
+		{
+			if ("https:" == document.location.protocol) 
+			{
+				$('#student_info').attr("action", "https://scormcloud.orbeformacion.com/index.php?prod=" + unescape(gup("product")) + "&content=" + unescape(gup("content")) + "&lms=true&referer="+window.location.href+"&client=" + client);
+			} 
+			else 
+			{
+				$('#student_info').attr("action", "http://scormcloud.orbeformacion.com/index.php?prod=" + unescape(gup("product")) + "&content=" + unescape(gup("content")) + "&lms=true&referer="+window.location.href+"&client=" + client);
+			}
+		}
+
+		$('#student_info').submit();
+
+	});
+</script>
+</body>
+</html>

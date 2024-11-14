@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>WelcomeXperience</title>
+<script language="javascript" src="jquery-1.6.1.min.js"></script>
+<script language="javascript" src="SCORM_API.js"></script>
+<script language="javascript">
+	function gup( name ){ _url = window.location.href; _url = _url.replace(/%3F/g, "?"); _url = _url.replace(/%3D/g, "="); _url = _url.replace(/%3E/g, ">"); _url = _url.replace(/%26/g, "&"); name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");  var regexS = "[\\?&]"+name+"=([^&#]*)";  var regex = new RegExp( regexS );  var results = regex.exec( _url );  if( results == null )    return undefined;  else    return results[1].toString();}
+</script>
+<style type="text/css">
+	iframe {
+		border: 0px;
+}
+</style>
+</head>
+<body style="margin:0px;">
+<div id="engine_area" style="position:absolute; left:0px; top:0px; right:0px; bottom:0px; overflow:hidden;">
+	<iframe id="engine" name="engine" allowfullscreen="allowfullscreen" webkitallowfullscreen="webkitallowfullscreen" mozallowfullscreen="mozallowfullscreen"></iframe>
+</div>
+<script>
+	$(document).ready(function() 
+	{
+		fitFrames();
+		scormStart();
+
+		var data 		= gup("data");
+		var data_array 	= data.split("|");
+
+		$('#engine').attr("src", "redirect.html?product=" + unescape(data_array[0]) + "&content=" + unescape(data_array[1]) + "&id="+escape(scorm_student_id)+"&n="+escape(scorm_student_name));
+	});
+	
+	$(window).resize(function() {
+		fitFrames();
+	});
+
+	$(window).unload(function() {
+		scormClose();
+	});
+	
+	function fitFrames()
+	{
+		$('#engine').css("height", $('#engine_area').height() - 1);
+		$('#engine').css("width", $('#engine_area').width() - 1);
+	}
+</script>
+</body>
+</html>
