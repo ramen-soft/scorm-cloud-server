@@ -1,16 +1,10 @@
 import { NextFunction, Request, Response, Router } from "express";
-import { IScorm } from "./model";
 import multer, { memoryStorage } from "multer";
-import { analizarScorm } from "./funcs";
+import { analizarScorm, createConnector } from "./funcs";
 import { ScormRepository } from "../../repositories/scorm.repository";
 import jszip from "jszip";
-import fs from "fs";
-import path from "path";
 import { v4 as uuid } from "uuid";
-import {
-	PaginatedRequest,
-	ResultsPagination,
-} from "../../util/pagination.model";
+import { PaginatedRequest } from "../../util/pagination.model";
 import { getScorms } from "./service";
 import { unzipFile } from "../../util/unzipFile";
 
@@ -40,6 +34,22 @@ const getScormInfo = async (req: Request, res: Response) => {
 	res.status(200).send(result);
 };
 router.get("/:id", getScormInfo);
+
+const getConnector = async (req: Request, res: Response) => {
+	const id = Number(req.params["id"]);
+	const repo = new ScormRepository();
+	const result = await repo.findOne(id);
+
+	if (result) {
+		const disposition = `attachment; filename="${result.name}_connector.zip"`;
+		res.setHeader("Content-Disposition", disposition);
+		res.setHeader("Content-Type", "application/zip");
+		(await createConnector(result)).pipe(res);
+		return;
+	}
+	res.status(404).send({ error: true, message: "Scorm no encontrado" });
+};
+router.get("/:id/connector", getConnector);
 
 const uploadScorm = async (req: Request, res: Response, next: NextFunction) => {
 	try {

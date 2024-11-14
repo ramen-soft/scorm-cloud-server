@@ -14,6 +14,7 @@ dist-ssr
 
 src/test.ts
 upload
+output
 
 # Editor directories and files
 .vscode/*

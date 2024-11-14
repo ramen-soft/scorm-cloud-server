@@ -1,10 +1,6 @@
-export interface IScorm {
-	id?: number;
-	name: string;
-}
-
 export interface IScormOrganizationItem {
 	id?: string;
+	guid: string;
 	identifier: string;
 	title: string;
 	score?: number;
@@ -18,6 +14,7 @@ export interface IScormOrganization {
 
 export interface IScormResource {
 	id?: string;
+	guid: string;
 	identifier: string;
 	type: string;
 	scormType?: string;

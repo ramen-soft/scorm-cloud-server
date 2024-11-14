@@ -1,13 +1,11 @@
 import { ResultSetHeader, RowDataPacket } from "mysql2";
-import { BaseRepository } from "../lib/baserepository";
 import { connection } from "../lib/db";
-import { IScorm, IScormManifest } from "../module/scorm/model";
-import { v4 as uuid } from "uuid";
+import { IScormManifest } from "../module/scorm/model";
 import { PaginatedRequest } from "../util/pagination.model";
 import { ScormDTO } from "../module/scorm/dto/ScormList.dto";
 import { ScormDetailDTO, ScormItem } from "../module/scorm/dto/ScormDetail.dto";
 
-export class ScormRepository extends BaseRepository<IScorm> {
+export class ScormRepository {
 	async countAll(): Promise<number> {
 		const conn = await connection.getConnection();
 
@@ -28,6 +26,19 @@ export class ScormRepository extends BaseRepository<IScorm> {
 		return rows[0];
 	}
 
+	async findByGUID(guid: string) {
+		const conn = await connection.getConnection();
+		const [[row]] = await conn.query<RowDataPacket[]>(
+			`SELECT id FROM scorm WHERE guid = ?`,
+			[guid]
+		);
+		conn.release();
+		if (row) {
+			return await this.findOne(row.id);
+		}
+		return null;
+	}
+
 	async findOne(id: number) {
 		const conn = await connection.getConnection();
 		const [[row]] = await conn.query<RowDataPacket[]>(
@@ -45,16 +56,18 @@ export class ScormRepository extends BaseRepository<IScorm> {
 			};
 
 			const [items] = await conn.query<RowDataPacket[]>(
-				`SELECT i.id, i.title, r.id res_id, r.identifier, r.type, r.href, r.scormtype FROM scorm_item i JOIN scorm_resource r ON r.item_id = i.id WHERE i.scorm_id = ?`,
+				`SELECT i.id, i.guid, i.title, r.id res_id, r.guid res_guid, r.identifier, r.type, r.href, r.scormtype FROM scorm_item i JOIN scorm_resource r ON r.item_id = i.id WHERE i.scorm_id = ?`,
 				[id]
 			);
 
 			detail.items = items.map<ScormItem>((item) => {
 				const ret: ScormItem = {
 					id: item.id,
+					guid: item.guid,
 					name: item.title,
 					resource: {
 						id: item.res_id,
+						guid: item.res_guid,
 						identifier: item.identifier,
 						href: item.href,
 						scormType: item.scormType,
@@ -76,7 +89,7 @@ export class ScormRepository extends BaseRepository<IScorm> {
 					return item;
 				})
 			);
-			conn.release();
+			await conn.release();
 			return detail;
 		}
 		await conn.release();
@@ -93,9 +106,10 @@ export class ScormRepository extends BaseRepository<IScorm> {
 
 		manifest.organizations[0].items.forEach(async (item) => {
 			const res = await conn.query<ResultSetHeader>(
-				`INSERT INTO scorm_item (scorm_id, resource, identifier, title, score) VALUES (?, ?, ?, ?, ?)`,
+				`INSERT INTO scorm_item (scorm_id, guid, resource, identifier, title, score) VALUES (?, ?, ?, ?, ?, ?)`,
 				[
 					scormId,
+					item.guid,
 					item.identifierRef,
 					item.identifier,
 					item.title,
@@ -110,9 +124,10 @@ export class ScormRepository extends BaseRepository<IScorm> {
 
 			if (resource) {
 				const res = await conn.query<ResultSetHeader>(
-					`INSERT INTO scorm_resource (item_id, identifier, type, href, scormtype) VALUES (?, ?, ?, ?, ?)`,
+					`INSERT INTO scorm_resource (item_id, guid, identifier, type, href, scormtype) VALUES (?, ?, ?, ?, ?, ?)`,
 					[
 						itemId,
+						resource.guid,
 						resource.identifier,
 						resource.type,
 						resource.href,
@@ -130,5 +145,7 @@ export class ScormRepository extends BaseRepository<IScorm> {
 				});
 			}
 		});
+
+		conn.release();
 	}
 }

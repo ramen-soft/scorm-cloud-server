@@ -1,5 +1,6 @@
 export interface ScormResource {
 	id: number;
+	guid: string;
 	identifier: string;
 	type: string;
 	href: string;
@@ -9,6 +10,7 @@ export interface ScormResource {
 
 export interface ScormItem {
 	id: number;
+	guid: string;
 	name: string;
 	resource: ScormResource;
 }
