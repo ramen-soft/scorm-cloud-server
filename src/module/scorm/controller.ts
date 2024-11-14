@@ -12,6 +12,7 @@ import {
 	ResultsPagination,
 } from "../../util/pagination.model";
 import { getScorms } from "./service";
+import { unzipFile } from "../../util/unzipFile";
 
 const zip = jszip();
 
@@ -39,26 +40,6 @@ const getScormInfo = async (req: Request, res: Response) => {
 	res.status(200).send(result);
 };
 router.get("/:id", getScormInfo);
-
-const unzipFile = (zip: jszip, destPath: string) => {
-	if (!fs.existsSync(destPath)) {
-		fs.mkdirSync(destPath);
-	}
-	Object.keys(zip.files).forEach((filename) => {
-		zip.file(filename)
-			?.async("nodebuffer")
-			.then((content) => {
-				const dest = destPath + "/" + filename;
-				const dir = path.dirname(dest);
-
-				if (!fs.existsSync(dir)) {
-					fs.mkdirSync(dir, { recursive: true });
-				}
-
-				fs.writeFileSync(dest, content);
-			});
-	});
-};
 
 const uploadScorm = async (req: Request, res: Response, next: NextFunction) => {
 	try {
