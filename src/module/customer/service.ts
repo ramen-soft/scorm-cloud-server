@@ -38,6 +38,11 @@ const addCustomer = async (customer: CustomerDTO) => {
 	}
 };
 
+const deleteCustomer = async (customer: CustomerDTO) => {
+	const repo = new CustomerRepository();
+	return repo.delete(customer);
+};
+
 const getCustomerScorms = async (
 	customerId: number,
 	options: PaginatedRequest
@@ -136,6 +141,7 @@ export {
 	getCustomers,
 	getCustomer,
 	addCustomer,
+	deleteCustomer,
 	getCustomerScorms,
 	getCustomerUsers,
 	addUser,

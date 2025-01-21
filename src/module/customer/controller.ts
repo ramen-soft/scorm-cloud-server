@@ -3,6 +3,7 @@ import { PaginatedRequest } from "../../util/pagination.model";
 import {
 	addCustomer,
 	addUser,
+	deleteCustomer,
 	getCustomer,
 	getCustomers,
 	getCustomerScorms,
@@ -51,7 +52,6 @@ const addCustomerReq = async (
 	res: Response,
 	next: NextFunction
 ) => {
-	console.log(req);
 	const customer: CustomerDTO = req.body;
 
 	try {
@@ -68,6 +68,27 @@ const addCustomerReq = async (
 	}
 };
 router.post("/", addCustomerReq);
+
+const deleteCustomerReq = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const customer: CustomerDTO = await getCustomer(
+			Number(req.params["id"])
+		);
+		if (!customer) {
+			res.status(404);
+			throw new Error("Customer not found");
+		}
+		await deleteCustomer(customer);
+		res.status(200).send({ id: customer.id, deleted: true });
+	} catch (e) {
+		next(e);
+	}
+};
+router.delete("/:id", deleteCustomerReq);
 
 const getCustomerScormsReq = async (
 	req: Request,

@@ -26,7 +26,7 @@ export class CustomerRepository {
 			//buscamos origenes permitidos:
 			const [rows] = await conn.query<
 				{ origin: string }[] & ResultSetHeader
-			>(`SELECT origin FROM customer_origins WHERE customer_id = ?`, [
+			>(`SELECT origin FROM customer_origins WHERE customerid = ?`, [
 				row.id,
 			]);
 			const origins = rows.map((row) => row.origin);
@@ -53,7 +53,7 @@ export class CustomerRepository {
 		const rows = await conn.query<RowDataPacket[]>(
 			`SELECT GROUP_CONCAT(o.origin) origins, c.id, c.guid, c.cif, c.name, c.description, c.active 
 			 FROM customer c 
-			 LEFT JOIN customer_origins o on o.customer_id = c.id 
+			 LEFT JOIN customer_origins o on o.customerid = c.id 
 			 GROUP BY c.id, c.guid, c.cif, c.name, c.description, c.active
 			 LIMIT ?, ?`,
 			[options.page * options.limit, options.limit]
@@ -81,11 +81,11 @@ export class CustomerRepository {
 		customer_id: number,
 		origins: string[]
 	) {
-		await conn.query("DELETE FROM customer_origins WHERE customer_id = ?", [
+		await conn.query("DELETE FROM customer_origins WHERE customerid = ?", [
 			customer_id,
 		]);
 		const stmt2 = await conn.prepare(
-			"INSERT INTO customer_origins (customer_id, origin) VALUES (?, ?)"
+			"INSERT INTO customer_origins (customerid, origin) VALUES (?, ?)"
 		);
 		for (let origin of origins) {
 			stmt2.execute([customer_id, origin]);
@@ -140,5 +140,34 @@ export class CustomerRepository {
 		await conn.commit();
 		conn.release();
 		return result;
+	}
+
+	async delete(customer: CustomerDTO) {
+		const conn = await connection.getConnection();
+		try {
+			await conn.beginTransaction();
+
+			await conn.query(
+				"DELETE FROM customer_origins WHERE customerid = ?",
+				[customer.id]
+			);
+			await conn.query(
+				"DELETE FROM customer_scorm WHERE customerid = ?",
+				[customer.id]
+			);
+			await conn.query("DELETE FROM customer_user WHERE customerid = ?", [
+				customer.id,
+			]);
+			await conn.query("DELETE FROM customer WHERE id = ?", [
+				customer.id,
+			]);
+
+			await conn.commit();
+		} catch (error) {
+			console.log(error);
+			await conn.rollback();
+		} finally {
+			conn.release();
+		}
 	}
 }
