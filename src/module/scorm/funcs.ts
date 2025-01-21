@@ -92,7 +92,10 @@ const CONNECTOR_BASEFILES = [
 	"SCORM_wrapper.html",
 ];
 
-export const createConnector = async (scorm: ScormDetailDTO) => {
+export const createConnector = async (
+	customerGUID: string = "",
+	scorm: ScormDetailDTO
+) => {
 	return new Promise<NodeJS.ReadableStream>((resolve, reject) => {
 		const zip = jszip();
 
@@ -108,7 +111,7 @@ export const createConnector = async (scorm: ScormDetailDTO) => {
 
 					//sustituimos la template string del cliente:
 					//si no hay cliente, la vaciamos:
-					content = content.replace("#@CLIENT_GUID@#", "");
+					content = content.replace("#@CLIENT_GUID@#", customerGUID);
 					content = content.replace(
 						/#@SCORM_PLAYER_URL@#/g,
 						"" + process.env.SCORM_PLAYER_URL

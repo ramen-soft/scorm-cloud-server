@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style type="text/css">
+			html,
+			body {
+				height: 100%;
+			}
+			body {
+				margin: 0;
+				padding: 0;
+			}
+			iframe {
+				border: 0;
+			}
+		</style>
+		<script src="js/easyXDM.min.js"></script>
+		<script src="js/jquery.custom.min.js"></script>
+	</head>
+	<body>
+		<iframe src="<%= content_uri %>" width="100%" height="100%"></iframe>
+
+		<script>
+			var data = {};
+			var interaction_count;
+			var firstload = true;
+			var loadingData = true;
+
+			<% if(user && item_id){ %>
+			function loginfo(t, k, v){
+			    $.ajax({type: 'POST', dataType: 'text', contentType: 'application/json', url: '/log', data: JSON.stringify({userid: <%= user.id %>, itemid: <%= item_id %>, tag: t, key: k, value: v})});
+			}
+			<% }else{ %>
+			function loginfo(t, k, v){}
+			<% } %>
+			easyXDM.DomHelper.requiresJSON("js/json2.js");
+
+			var API = {}
+			API.registerSCORMcontext = function(referer, callback){
+			    loginfo('RegisterContext', referer, JSON.stringify(callback));
+			    console.log('API registerSCORMcontext', referer, callback);
+			};
+
+			API.LMSGetValue = function(v){ return data[v] }
+			API.LMSSetValue = function(n, v){
+			    data[n] = v;
+			             console.log('Setting value', n, v);
+			    rpc.scormSetValue(n, v, function(){
+			        if(/interactions\.([0-9-]+)\.id/i.test(n)){
+			            try{
+			                var o = parseInt(/interactions\.([0-9-]+)\.id/i.exec(n)[1]);
+			                data['cmi.interactions._count'] = o+1;
+			            }catch(e){}
+			        }
+			        rpc.scormCommit();
+			    });
+			}
+			API.LMSInitialize = function(){
+			    loginfo('LMSInitialize', null, null);
+			}
+			API.LMSCommit = function(){
+			    rpc.scormCommit();
+			}
+			API.LMSFinish = function(){
+
+			}
+			API.LMSGetLastError = function(){
+			    return "";
+			}
+			API.LMSGetErrorString = function(){
+			    return "";
+			}
+			API.LMSGetDiagnostic = function(){
+			    return "";
+			}
+			API.registerSCORMcontext('<%= ref %>/SCORM_wrapper.html', function(a){console.log(a)});
+		</script>
+
+		<script>
+			var rpc = new easyXDM.Rpc(
+				{
+					remote: "<%= ref %>/SCORM_wrapper.html",
+				},
+				{
+					remote: {
+						scormSetValue: {},
+						scormGetValue: {},
+						scormGetAllValues: {},
+						scormCommit: {},
+						scormFinish: {},
+					},
+				}
+			);
+			rpc.scormGetAllValues(function (vs) {
+				data = vs;
+				loadingData = false;
+				console.log(vs);
+				document.querySelector("iframe").src = "<%= content_uri %>";
+			});
+		</script>
+	</body>
+</html>

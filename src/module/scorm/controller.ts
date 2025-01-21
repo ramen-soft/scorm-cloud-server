@@ -28,15 +28,25 @@ const listAllScorms = async (
 };
 router.get("/", listAllScorms);
 
-const getScormInfo = async (req: Request, res: Response) => {
+const getScormInfo = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
 	const repo = new ScormRepository();
 	const result = await repo.findOne(Number(req.params["id"]));
-	res.status(200).send(result);
+	if (result) {
+		res.status(200).send(result);
+	} else {
+		res.status(404);
+		next(new Error("SCORM no encontrado"));
+	}
 };
 router.get("/:id", getScormInfo);
 
 const getConnector = async (req: Request, res: Response) => {
 	const id = Number(req.params["id"]);
+	const { customer } = req.query;
 	const repo = new ScormRepository();
 	const result = await repo.findOne(id);
 
@@ -44,7 +54,7 @@ const getConnector = async (req: Request, res: Response) => {
 		const disposition = `attachment; filename="${result.name}_connector.zip"`;
 		res.setHeader("Content-Disposition", disposition);
 		res.setHeader("Content-Type", "application/zip");
-		(await createConnector(result)).pipe(res);
+		(await createConnector(String(customer) || "", result)).pipe(res);
 		return;
 	}
 	res.status(404).send({ error: true, message: "Scorm no encontrado" });
