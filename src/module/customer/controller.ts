@@ -7,6 +7,7 @@ import {
 	getCustomer,
 	getCustomers,
 	getCustomerScorms,
+	getCustomerStats,
 	getCustomerUsers,
 } from "./service";
 import { CustomerDTO } from "./dto/CustomerDTO";
@@ -32,6 +33,17 @@ const getCustomerReq = async (
 	}
 };
 router.get("/:id", getCustomerReq);
+
+const getCustomerStatsReq = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	const id = Number(req.params["id"] || 0);
+	const stats = await getCustomerStats(id);
+	res.status(200).send(stats);
+};
+router.get("/:id/stats", getCustomerStatsReq);
 
 const listAllCustomers = async (
 	req: Request,

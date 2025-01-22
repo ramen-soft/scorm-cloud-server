@@ -29,6 +29,11 @@ const getCustomer = async (id: number) => {
 	return await repo.find(id);
 };
 
+const getCustomerStats = async (id: number) => {
+	const repo = new CustomerRepository();
+	return await repo.stats(id);
+};
+
 const addCustomer = async (customer: CustomerDTO) => {
 	const repo = new CustomerRepository();
 	if (!customer.id) {
@@ -140,6 +145,7 @@ const addUser = async (customerId: number, user: CustomerUserDTO) => {
 export {
 	getCustomers,
 	getCustomer,
+	getCustomerStats,
 	addCustomer,
 	deleteCustomer,
 	getCustomerScorms,

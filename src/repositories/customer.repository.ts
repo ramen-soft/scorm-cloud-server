@@ -118,6 +118,48 @@ export class CustomerRepository {
 		return result;
 	}
 
+	async stats(customer_id: number) {
+		const conn = await connection.getConnection();
+		try {
+			await conn.beginTransaction();
+			try {
+				const [result] = await conn.query<
+					{
+						scorms: number;
+						users: number;
+						subscriptions: number;
+					} & ResultSetHeader
+				>(
+					`
+					SELECT 
+						c.id,
+						COUNT(DISTINCT cs.id) scorms, 
+						COUNT(DISTINCT cu.id) users, 
+						COUNT(s.id) subscriptions
+					FROM customer c
+					LEFT JOIN customer_scorm cs ON cs.customerid = c.id
+					LEFT JOIN customer_user cu ON cu.customerid = c.id
+					LEFT JOIN subscription s ON s.customerscormid = cs.id AND s.customeruserid = cu.id
+					WHERE c.ID = ?
+					GROUP BY c.ID`,
+					[customer_id]
+				);
+				const [data] = result as any;
+				return {
+					scorms: data.scorms,
+					users: data.users,
+					subscriptions: data.subscriptions,
+				};
+			} catch (e) {
+				return { scorms: 0, users: 0, subscriptions: 0 };
+			}
+		} catch (e) {
+			return { scorms: 0, users: 0, subscriptions: 0 };
+		} finally {
+			conn.release();
+		}
+	}
+
 	async update(customer: CustomerDTO) {
 		const conn = await connection.getConnection();
 		await conn.beginTransaction();
