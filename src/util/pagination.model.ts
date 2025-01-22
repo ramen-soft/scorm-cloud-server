@@ -7,5 +7,6 @@ export type ResultsPagination<T> = {
 	page: number;
 	count: number;
 	total: number;
+	totalPages: number;
 	results: T[];
 };

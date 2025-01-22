@@ -13,10 +13,12 @@ const getScorms = async (options: PaginatedRequest) => {
 		count: options.limit || 15,
 		results: [],
 		total: 0,
+		totalPages: 0,
 	};
 	const repo = new ScormRepository();
 
 	results.total = await repo.countAll();
+	results.totalPages = Math.ceil(results.total / results.count);
 	results.results = await repo.findAll(options);
 	return results;
 };

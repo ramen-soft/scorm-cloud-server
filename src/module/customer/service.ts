@@ -16,10 +16,12 @@ const getCustomers = async (options: PaginatedRequest) => {
 		count: options.limit || 15,
 		results: [],
 		total: 0,
+		totalPages: 0,
 	};
 	const repo = new CustomerRepository();
 
 	results.total = await repo.countAll();
+	results.totalPages = Math.ceil(results.total / results.count);
 	results.results = await repo.findAll(options);
 	return results;
 };
@@ -57,14 +59,17 @@ const getCustomerScorms = async (
 		count: options.limit || 15,
 		results: [],
 		total: 0,
+		totalPages: 0,
 	};
 
 	const conn = await connection.getConnection();
 
 	const [[totals]] = await conn.query<ResultSetHeader & [{ total: number }]>(
-		`SELECT COUNT(1) total FROM scorm`
+		`SELECT COUNT(1) total FROM customer_scorm cs WHERE cs.customerid = ?`,
+		[customerId]
 	);
 	results.total = totals.total;
+	results.totalPages = Math.ceil(results.total / results.count);
 	const res = await conn.query<CustomerScormDTO[] & RowDataPacket[]>(
 		`SELECT s.id, s.guid, s.name, cs.slots, cs.duration, cs.created_on FROM customer_scorm cs JOIN scorm s ON s.id = cs.scormid WHERE cs.customerid = ? LIMIT ?, ?`,
 		[customerId, options.page * options.limit, options.limit]
@@ -83,14 +88,17 @@ const getCustomerUsers = async (
 		count: options.limit || 15,
 		results: [],
 		total: 0,
+		totalPages: 0,
 	};
 
 	const conn = await connection.getConnection();
 
 	const [[totals]] = await conn.query<ResultSetHeader & [{ total: number }]>(
-		`SELECT COUNT(1) total FROM scorm`
+		`SELECT COUNT(1) total FROM customer_user cu WHERE cu.customerid = ?`,
+		[customerId]
 	);
 	results.total = totals.total;
+	results.totalPages = Math.ceil(results.total / results.count);
 	const res = await conn.query<CustomerUserDTO[] & RowDataPacket[]>(
 		`SELECT * FROM customer_user WHERE customerid = ? LIMIT ?, ?`,
 		[customerId, options.page * options.limit, options.limit]
