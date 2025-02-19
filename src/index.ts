@@ -11,6 +11,7 @@ import { renderFile } from "ejs";
 import fs from "fs";
 import { connection } from "./lib/db";
 import { CustomerRepository } from "./repositories/customer.repository";
+import { createWorkbook } from "./services/excel";
 
 const app = express();
 
@@ -119,6 +120,10 @@ app.post("/", async (req: Request, res: Response, next: NextFunction) => {
 	} catch (e) {
 		next(e);
 	}
+});
+
+app.get("/reports", async (req: Request, res: Response, next: NextFunction) => {
+	createWorkbook();
 });
 
 app.post("/log", async (req: Request, res: Response, next: NextFunction) => {
