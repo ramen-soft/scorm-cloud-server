@@ -9,6 +9,7 @@ import { ScormDTO } from "../scorm/dto/ScormList.dto";
 import { CustomerDTO } from "./dto/CustomerDTO";
 import { CustomerScormDTO } from "./dto/CustomerScormDTO";
 import { CustomerUserDTO } from "./dto/CustomerUserDTO";
+import { ScormAssignDTO } from "./dto/ScormAssignDTO";
 
 const getCustomers = async (options: PaginatedRequest) => {
 	let results: ResultsPagination<CustomerDTO> = {
@@ -116,6 +117,74 @@ const getCustomerUsers = async (
 	return results;
 };
 
+const getAvailableScorms = async (
+	customerId: number,
+	options: PaginatedRequest
+) => {
+	const conn = await connection.getConnection();
+
+	let results: ResultsPagination<CustomerScormDTO> = {
+		page: options.page || 0,
+		count: options.limit || 15,
+		results: [],
+		total: 0,
+		totalPages: 0,
+	};
+
+	try {
+		const [[totals]] = await conn.query<
+			ResultSetHeader & [{ total: number }]
+		>(
+			`SELECT COUNT(1) total 
+			FROM scorm
+			LEFT JOIN customer_scorm cs ON cs.customerid = ? AND cs.scormid = scorm.id
+			WHERE cs.scormid IS NULL`,
+			[customerId]
+		);
+
+		results.total = totals.total;
+		results.totalPages = Math.ceil(results.total / results.count);
+		const res = await conn.query<CustomerScormDTO[] & RowDataPacket[]>(
+			`
+			SELECT scorm.id, scorm.name
+			FROM scorm
+			LEFT JOIN customer_scorm cs ON cs.customerid = ? AND cs.scormid = scorm.id
+			WHERE cs.scormid IS NULL
+			LIMIT ?, ?
+			`,
+			[customerId, options.page * options.limit, options.limit]
+		);
+		conn.release();
+		results.results = res[0];
+	} catch (e) {
+		return null;
+	} finally {
+		conn.release();
+		return results;
+	}
+};
+
+const assignScorms = async (
+	customerId: number,
+	data: ScormAssignDTO
+): Promise<boolean | unknown> => {
+	const conn = await connection.getConnection();
+	try {
+		for (let scorm of data.scorms) {
+			const res = await conn.query(
+				`
+			INSERT INTO customer_scorm (customerid, scormid, slots, duration) VALUES (?, ?, ?, ?)`,
+				[customerId, scorm, data.values.slots, data.values.duration]
+			);
+		}
+		return true;
+	} catch (e) {
+		return e;
+	} finally {
+		conn.release();
+	}
+};
+
 const addUser = async (customerId: number, user: CustomerUserDTO) => {
 	const conn = await connection.getConnection();
 	try {
@@ -159,4 +228,6 @@ export {
 	getCustomerScorms,
 	getCustomerUsers,
 	addUser,
+	getAvailableScorms,
+	assignScorms,
 };

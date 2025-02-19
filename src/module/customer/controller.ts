@@ -3,7 +3,9 @@ import { PaginatedRequest } from "../../util/pagination.model";
 import {
 	addCustomer,
 	addUser,
+	assignScorms,
 	deleteCustomer,
+	getAvailableScorms,
 	getCustomer,
 	getCustomers,
 	getCustomerScorms,
@@ -12,6 +14,7 @@ import {
 } from "./service";
 import { CustomerDTO } from "./dto/CustomerDTO";
 import { ResultSetHeader } from "mysql2";
+import { ScormAssignDTO } from "./dto/ScormAssignDTO";
 
 const router = Router();
 
@@ -142,5 +145,40 @@ const addUserReq = async (req: Request, res: Response, next: NextFunction) => {
 	res.status(200).send(result);
 };
 router.post("/:customer/user", addUserReq);
+
+const getAvailableScormsReq = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	const pagination: PaginatedRequest = {
+		page: +(req.query.page || 0),
+		limit: +(req.query.limit || 15),
+	};
+	const scorms = await getAvailableScorms(
+		Number(req.params["customer"]),
+		pagination
+	);
+	res.status(200).send(scorms);
+};
+router.get("/:customer/available_scorms", getAvailableScormsReq);
+
+const assignScormsReq = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	const { customer: customerId } = { customer: Number(req.params.customer) };
+	const data: ScormAssignDTO = req.body;
+	console.log(data);
+	const result = await assignScorms(customerId, data);
+	if (result === true) {
+		res.status(200).send({ done: true });
+	} else {
+		console.log(result);
+		res.status(500).send({ done: false });
+	}
+};
+router.post("/:customer/assign_scorms", assignScormsReq);
 
 export default router;
