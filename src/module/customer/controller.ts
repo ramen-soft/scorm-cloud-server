@@ -10,6 +10,8 @@ import {
 	getCustomers,
 	getCustomerScorms,
 	getCustomerStats,
+	getCustomerStudentsReport,
+	getCustomerUsageReport,
 	getCustomerUsers,
 } from "./service";
 import { CustomerDTO } from "./dto/CustomerDTO";
@@ -180,5 +182,53 @@ const assignScormsReq = async (
 	}
 };
 router.post("/:customer/assign_scorms", assignScormsReq);
+
+const studentsReportReq = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	const {
+		customer: customerId,
+		month,
+		year,
+	} = {
+		customer: Number(req.params.customer),
+		month: Number(req.query.month),
+		year: Number(req.query.year),
+	};
+	const data = await getCustomerStudentsReport(customerId, month, year);
+	res.writeHead(200, {
+		"Content-Disposition": `attachment; filename="report_accesos.xlsx"`,
+		"Content-Type":
+			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+	});
+	res.end(data);
+};
+router.get("/:customer/reports/students", studentsReportReq);
+
+const usageReportReq = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	const {
+		customer: customerId,
+		month,
+		year,
+	} = {
+		customer: Number(req.params.customer),
+		month: Number(req.query.month),
+		year: Number(req.query.year),
+	};
+	const data = await getCustomerUsageReport(customerId, month, year);
+	res.writeHead(200, {
+		"Content-Disposition": `attachment; filename="report_consumo.xlsx"`,
+		"Content-Type":
+			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+	});
+	res.end(data);
+};
+router.get("/:customer/reports/usage", usageReportReq);
 
 export default router;

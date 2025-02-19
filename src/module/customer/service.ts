@@ -10,6 +10,7 @@ import { CustomerDTO } from "./dto/CustomerDTO";
 import { CustomerScormDTO } from "./dto/CustomerScormDTO";
 import { CustomerUserDTO } from "./dto/CustomerUserDTO";
 import { ScormAssignDTO } from "./dto/ScormAssignDTO";
+import { createWorkbook } from "../../services/excel";
 
 const getCustomers = async (options: PaginatedRequest) => {
 	let results: ResultsPagination<CustomerDTO> = {
@@ -219,6 +220,146 @@ const addUser = async (customerId: number, user: CustomerUserDTO) => {
 	}
 };
 
+interface StudentsReportRow {
+	ean: string;
+	name: string;
+	full_name: string;
+	primer: Date;
+	ultimo: Date;
+}
+
+const getCustomerStudentsReport = async (
+	customerId: number,
+	month: number,
+	year: number
+): Promise<Buffer> => {
+	const conn = await connection.getConnection();
+	let result: StudentsReportRow[] = [];
+	try {
+		const res = await conn.query<StudentsReportRow[] & RowDataPacket[]>(
+			`SELECT
+					s.ean, s.name, cu.full_name, DATE_FORMAT(MIN(d.created_on), '%d/%m/%Y %H:%i') primer, DATE_FORMAT(MAX(d.created_on), '%d/%m/%Y %H:%i') ultimo
+					FROM customer_user cu
+					JOIN cmidata d ON d.customeruserid = cu.id
+					JOIN scorm_item si ON si.id = d.scormitemid
+					JOIN customer_scorm cs ON cs.scormid = si.scorm_id
+					JOIN scorm s ON s.id = cs.scormid
+					WHERE cu.customerid = ? AND (EXTRACT(MONTH FROM d.created_on) BETWEEN ? AND ?) AND EXTRACT(YEAR FROM d.created_on) = ?
+					GROUP BY s.ean, s.name, cu.full_name`,
+			[customerId, month + 1, month + 2, year]
+		);
+
+		const rows = res[0].map((row) => {
+			return row;
+		});
+
+		result = rows;
+	} catch (e) {
+		result = [];
+	} finally {
+		conn.release();
+
+		const wb = await createWorkbook();
+		let rowIndex = 1;
+		const ws = wb.addWorksheet("sheet 1");
+		ws.column(1).setWidth(15);
+		ws.column(2).setWidth(75);
+		ws.column(3).setWidth(33);
+		ws.column(4).setWidth(17);
+		ws.column(5).setWidth(17);
+
+		ws.cell(1, 1).string("EAN");
+		ws.cell(1, 2).string("Producto");
+		ws.cell(1, 3).string("Alumno");
+		ws.cell(1, 4).string("Primer acceso");
+		ws.cell(1, 5).string("Último acceso");
+
+		result.forEach((row, index) => {
+			try {
+				ws.cell(index + 2, 1).string(row.ean);
+				ws.cell(index + 2, 2).string(row.name);
+				ws.cell(index + 2, 3).string(row.full_name);
+				ws.cell(index + 2, 4).string(row.primer);
+				ws.cell(index + 2, 5).string(row.ultimo);
+			} catch (e) {}
+		});
+
+		return await wb.writeToBuffer();
+	}
+};
+
+interface UsageReportRow {
+	ean: string;
+	name: string;
+	alumnos: number;
+	price: number;
+	subtotal: number;
+}
+
+const getCustomerUsageReport = async (
+	customerId: number,
+	month: number,
+	year: number
+): Promise<Buffer> => {
+	const conn = await connection.getConnection();
+	let result: UsageReportRow[] = [];
+	try {
+		const res = await conn.query<UsageReportRow[] & RowDataPacket[]>(
+			`SELECT
+				DISTINCT s.EAN ean, s.name, COUNT(DISTINCT cu.id) alumnos, s.price, s.price * COUNT(distinct cu.id) subtotal
+				FROM customer c
+				JOIN customer_scorm cs ON cs.customerid = c.id
+				JOIN scorm s ON s.id = cs.scormid
+				JOIN customer_user cu ON cu.customerid = c.id
+				JOIN cmidata d ON d.customeruserid = cu.id-- AND d.action = 'RegisterContext'
+				WHERE cu.first_name <> '' AND cu.first_name IS NOT NULL AND s.EAN IS NOT NULL AND c.id = ?
+				AND (EXTRACT(MONTH FROM d.created_on) BETWEEN ? AND ?) AND EXTRACT(YEAR FROM d.created_on) = ?
+				GROUP BY s.ean, d.customeruserid, s.id, DATE(d.created_on)`,
+			[customerId, month + 1, month + 2, year]
+		);
+
+		const rows = res[0].map((row) => {
+			row.alumnos = Number("" + row.alumnos);
+			row.price = Number("" + row.price);
+			row.subtotal = Number("" + row.subtotal);
+			return row;
+		});
+
+		result = rows;
+	} catch (e) {
+		result = [];
+	} finally {
+		conn.release();
+
+		const wb = await createWorkbook();
+		let rowIndex = 1;
+		const ws = wb.addWorksheet("sheet 1");
+		ws.column(1).setWidth(15);
+		ws.column(2).setWidth(75);
+		ws.column(3).setWidth(17);
+		ws.column(4).setWidth(17);
+		ws.column(5).setWidth(17);
+
+		ws.cell(1, 1).string("EAN");
+		ws.cell(1, 2).string("Producto");
+		ws.cell(1, 3).string("Nº Alumnos");
+		ws.cell(1, 4).string("PVP");
+		ws.cell(1, 5).string("Subtotal");
+
+		result.forEach((row, index) => {
+			try {
+				ws.cell(index + 2, 1).string(row.ean);
+				ws.cell(index + 2, 2).string(row.name);
+				ws.cell(index + 2, 3).number(row.alumnos);
+				ws.cell(index + 2, 4).number(row.price);
+				ws.cell(index + 2, 5).number(row.subtotal);
+			} catch (e) {}
+		});
+
+		return await wb.writeToBuffer();
+	}
+};
+
 export {
 	getCustomers,
 	getCustomer,
@@ -230,4 +371,6 @@ export {
 	addUser,
 	getAvailableScorms,
 	assignScorms,
+	getCustomerStudentsReport,
+	getCustomerUsageReport,
 };

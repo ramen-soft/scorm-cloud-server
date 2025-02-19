@@ -123,7 +123,13 @@ app.post("/", async (req: Request, res: Response, next: NextFunction) => {
 });
 
 app.get("/reports", async (req: Request, res: Response, next: NextFunction) => {
-	createWorkbook();
+	const wb = await createWorkbook();
+	res.writeHead(200, {
+		"Content-Disposition": `attachment; filename="report_accesos.xlsx"`,
+		"Content-Type":
+			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+	});
+	res.end(wb);
 });
 
 app.post("/log", async (req: Request, res: Response, next: NextFunction) => {
