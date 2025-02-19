@@ -19,11 +19,14 @@ export class ScormRepository {
 	async findAll(options: PaginatedRequest): Promise<ScormDTO[]> {
 		const conn = await connection.getConnection();
 		const rows = await conn.query<ScormDTO[] & RowDataPacket[]>(
-			`SELECT id, guid, name, status FROM scorm LIMIT ?, ?`,
+			`SELECT id, guid, ean, name, status, price FROM scorm LIMIT ?, ?`,
 			[options.page * options.limit, options.limit]
 		);
 		conn.release();
-		return rows[0];
+		return rows[0].map((row) => {
+			row.price = Number(row.price);
+			return row;
+		});
 	}
 
 	async findByGUID(guid: string) {
@@ -96,11 +99,33 @@ export class ScormRepository {
 		return null;
 	}
 
-	async createFromManifest(guid: string, manifest: IScormManifest) {
+	async updateScorm(id: number, price: number, ean: string | null) {
+		const conn = await connection.getConnection();
+		let result: boolean;
+		try {
+			await conn.query(
+				`UPDATE scorm SET price = ?, ean = ? WHERE id = ?`,
+				[price, ean, id]
+			);
+			result = true;
+		} catch (e) {
+			result = false;
+		} finally {
+			conn.release();
+		}
+		return result;
+	}
+
+	async createFromManifest(
+		guid: string,
+		manifest: IScormManifest,
+		price: number = 0,
+		ean: string | null
+	) {
 		const conn = await connection.getConnection();
 		const res = await conn.execute<ResultSetHeader>(
-			`INSERT INTO scorm (guid, name, status, manifest) VALUES (?, ?, ?, ?)`,
-			[guid, manifest.title, 1, JSON.stringify(manifest)]
+			`INSERT INTO scorm (guid, name, ean, status, manifest, price) VALUES (?, ?, ?, ?, ?, ?)`,
+			[guid, manifest.title, ean, 1, JSON.stringify(manifest), price]
 		);
 		const scormId = res[0].insertId;
 
@@ -147,5 +172,7 @@ export class ScormRepository {
 		});
 
 		conn.release();
+
+		return scormId;
 	}
 }

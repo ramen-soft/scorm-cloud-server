@@ -61,10 +61,32 @@ const getConnector = async (req: Request, res: Response) => {
 };
 router.get("/:id/connector", getConnector);
 
+const VALID_ZIP_MIMETYPES = [
+	"application/zip",
+	"application/x-zip",
+	"application/x-zip-compressed",
+	"application/octet-stream",
+	"application/x-compress",
+	"application/x-compressed",
+	"multipart/x-zip",
+];
+
+VALID_ZIP_MIMETYPES.find((mime) => "application-zip".localeCompare);
+
 const uploadScorm = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const file = req.file;
-		if (file?.mimetype.localeCompare("application/zip") != 0) {
+		const price = req.body.price || 0;
+		const ean = req.body.ean || null;
+		if (!file) {
+			res.status(500).send({
+				error: true,
+				message: "No se ha recibido ningún fichero",
+			});
+			return;
+		}
+
+		if (!VALID_ZIP_MIMETYPES.includes(file.mimetype.toLowerCase())) {
 			res.status(500).send({
 				error: true,
 				message: "El archivo debe ser un fichero ZIP",
@@ -86,16 +108,53 @@ const uploadScorm = async (req: Request, res: Response, next: NextFunction) => {
 			return;
 		}
 
-		const manifest = await analizarScorm(zipFile);
+		try {
+			const manifest = await analizarScorm(zipFile);
 
-		const repo = new ScormRepository();
-		repo.createFromManifest(guid, manifest);
+			const repo = new ScormRepository();
+			const scormId = await repo.createFromManifest(
+				guid,
+				manifest,
+				price,
+				ean
+			);
 
-		res.status(200).send({ status: "ok", manifest });
+			res.status(200).send({ status: "ok", manifest, id: scormId });
+		} catch (e) {
+			res.status(500).send({
+				error: true,
+				message: (e as Error).message,
+			});
+			return;
+		}
 	} catch (e) {
 		next(e);
 	}
 };
 router.post("/upload", scormUploader.single("scorm"), uploadScorm);
+
+const updateScorm = async (req: Request, res: Response, next: NextFunction) => {
+	try {
+		const id = req.body.id;
+		const price = req.body.price || 0;
+		const ean = req.body.ean || null;
+
+		try {
+			const repo = new ScormRepository();
+			await repo.updateScorm(id, price, ean);
+
+			res.status(200).send({ status: "ok", id: Number(id) });
+		} catch (e) {
+			res.status(500).send({
+				error: true,
+				message: (e as Error).message,
+			});
+			return;
+		}
+	} catch (e) {
+		next(e);
+	}
+};
+router.post("/update", scormUploader.none(), updateScorm);
 
 export default router;
