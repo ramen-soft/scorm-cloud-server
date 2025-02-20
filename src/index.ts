@@ -12,6 +12,8 @@ import fs from "fs";
 import { connection } from "./lib/db";
 import { CustomerRepository } from "./repositories/customer.repository";
 import { createWorkbook } from "./services/excel";
+import { verifyToken } from "./middlewares/auth.middleware";
+import jwt from "jsonwebtoken";
 
 const app = express();
 
@@ -25,15 +27,40 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({ credentials: true, origin: "http://localhost:5173" }));
 
-app.use("/scorms", scormController);
+app.use("/scorms", verifyToken, scormController);
 
-app.use("/customers", customerController);
+app.use("/customers", verifyToken, customerController);
 
 app.get("/", (req: Request, res: Response) => {
 	console.log(req.query);
 	res.status(200).json({
 		message: "Hello World",
 	});
+});
+
+app.post("/login", (req: Request, res: Response) => {
+	const username = req.body.user;
+	const password = req.body.pass;
+	if (!username || !password) {
+		res.status(400);
+		throw new Error("Username and password are required");
+	}
+	if (username === "admin" && password === "123456") {
+		const token = jwt.sign(
+			{ username },
+			process.env.TOKEN_SECRET as string,
+			{ expiresIn: "1h" }
+		);
+		res.cookie("token", token, { httpOnly: true, secure: true });
+		res.status(200).json({ logged: true, username });
+	} else {
+		res.status(401);
+		throw new Error("Authentication failed");
+	}
+});
+
+app.get("/protected", verifyToken, (req: Request, res: Response) => {
+	res.status(200).send("Todo bien");
 });
 
 app.get("/scorm_contents/*", (req: Request, res: Response) => {
@@ -122,15 +149,19 @@ app.post("/", async (req: Request, res: Response, next: NextFunction) => {
 	}
 });
 
-app.get("/reports", async (req: Request, res: Response, next: NextFunction) => {
-	const wb = await createWorkbook();
-	res.writeHead(200, {
-		"Content-Disposition": `attachment; filename="report_accesos.xlsx"`,
-		"Content-Type":
-			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-	});
-	res.end(wb);
-});
+app.get(
+	"/reports",
+	verifyToken,
+	async (req: Request, res: Response, next: NextFunction) => {
+		const wb = await createWorkbook();
+		res.writeHead(200, {
+			"Content-Disposition": `attachment; filename="report_accesos.xlsx"`,
+			"Content-Type":
+				"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+		});
+		res.end(wb);
+	}
+);
 
 app.post("/log", async (req: Request, res: Response, next: NextFunction) => {
 	try {
