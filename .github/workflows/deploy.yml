@@ -17,7 +17,7 @@ jobs:
                   USER: ${{ secrets.SC_EC2_USER }}
               run: |
                   echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
-                  ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST}
+                  ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} << 'EOF'
                   echo "Current directory: $(pwd)"
                   echo "Listing home directory:"
                   ls -la ~
@@ -54,4 +54,4 @@ jobs:
 
                   echo "Starting/restarting application..."
                   pm2 restart build/index.js || pm2 start build/index.js
-                  '
+                  EOF
