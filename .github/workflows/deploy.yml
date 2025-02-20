@@ -56,5 +56,5 @@ jobs:
                   npm run build
 
                   echo "Starting/restarting application..."
-                  pm2 restart build/index.js || pm2 start build/index.js
+                  pm2 restart dist/index.js || pm2 start dist/index.js
                   EOF
