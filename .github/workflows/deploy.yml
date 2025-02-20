@@ -16,6 +16,9 @@ jobs:
                   HOST: ${{ secrets.SC_EC2_HOST }}
                   USER: ${{ secrets.SC_EC2_USER }}
               run: |
+                  echo "$HOST"
+                  echo "$USER"
+                  
                   echo "$PRIVATE_KEY" > github-ec2.pem && chmod 600 github-ec2.pem
                   ssh -o StrictHostKeyChecking=no -i github-ec2.pem ${USER}@${HOST} << 'EOF'
                   echo "Current directory: $(pwd)"
