@@ -157,7 +157,7 @@ app.post("/", async (req: Request, res: Response, next: NextFunction) => {
 			ref: referer,
 			content_uri,
 			item_id,
-			username: "Pepito",
+			username: username,
 		});
 	} catch (e) {
 		next(e);

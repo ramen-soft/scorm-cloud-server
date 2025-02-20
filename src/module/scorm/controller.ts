@@ -7,6 +7,7 @@ import { v4 as uuid } from "uuid";
 import { PaginatedRequest } from "../../util/pagination.model";
 import { getScorms } from "./service";
 import { unzipFile } from "../../util/unzipFile";
+import { CustomerRepository } from "../../repositories/customer.repository";
 
 const zip = jszip();
 
@@ -48,13 +49,17 @@ const getConnector = async (req: Request, res: Response) => {
 	const id = Number(req.params["id"]);
 	const { customer } = req.query;
 	const repo = new ScormRepository();
+	const cust = new CustomerRepository();
+	const customerInfo = await cust.find(Number(customer));
 	const result = await repo.findOne(id);
 
 	if (result) {
 		const disposition = `attachment; filename="${result.name}_connector.zip"`;
 		res.setHeader("Content-Disposition", disposition);
 		res.setHeader("Content-Type", "application/zip");
-		(await createConnector(String(customer) || "", result)).pipe(res);
+		(await createConnector(String(customerInfo.guid) || "", result)).pipe(
+			res
+		);
 		return;
 	}
 	res.status(404).send({ error: true, message: "Scorm no encontrado" });
