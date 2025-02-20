@@ -186,6 +186,26 @@ const assignScorms = async (
 	}
 };
 
+const findUser = async (
+	customerId: number,
+	username: string
+): Promise<CustomerUserDTO | undefined> => {
+	const conn = await connection.getConnection();
+	let ret;
+	try {
+		const res = await conn.query<CustomerUserDTO[] & RowDataPacket[]>(
+			`SELECT * FROM customer_user WHERE customerid = ? AND username = ?`,
+			[customerId, username]
+		);
+		ret = res[0][0];
+	} catch (e) {
+		ret = undefined;
+	} finally {
+		conn.release();
+		return ret;
+	}
+};
+
 const addUser = async (customerId: number, user: CustomerUserDTO) => {
 	const conn = await connection.getConnection();
 	try {
@@ -368,6 +388,7 @@ export {
 	deleteCustomer,
 	getCustomerScorms,
 	getCustomerUsers,
+	findUser,
 	addUser,
 	getAvailableScorms,
 	assignScorms,

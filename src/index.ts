@@ -14,6 +14,7 @@ import { CustomerRepository } from "./repositories/customer.repository";
 import { createWorkbook } from "./services/excel";
 import { verifyToken } from "./middlewares/auth.middleware";
 import jwt from "jsonwebtoken";
+import { addUser, findUser } from "./module/customer/service";
 
 const app = express();
 
@@ -132,7 +133,21 @@ app.post("/", async (req: Request, res: Response, next: NextFunction) => {
 		const customer = await new CustomerRepository().findByGUID(
 			String(client)
 		);
-		console.log(customer);
+
+		if (customer && customer.id) {
+			if (!(await findUser(customer.id, username))) {
+				await addUser(customer.id, {
+					username,
+					firstName: fullname.split(" ")[0],
+					lastName: "",
+					fullName: fullname,
+					email: username,
+					license_start: null,
+					license_end: null,
+					status: true,
+				});
+			}
+		}
 
 		const content_uri = `scorm_contents/${scorm.guid}/${resource.href}`;
 		const item_id = resource.id;
